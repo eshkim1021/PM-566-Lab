@@ -401,6 +401,73 @@ in the previous question, use `leaflet()` to visualize all \~100 points
 in the same figure, applying different colors for those identified in
 this question.
 
+``` r
+library(leaflet)
+met_stations <- unique(met[,.(USAFID,STATE,lon,lat)])
+met_stations[,n := 1, by = USAFID]
+met_stations <- met_stations[n==1]
+
+met_stations[,lat_mid := quantile(lat, probs = 0.5, na.rm =T, by = STATE)]
+met_stations[,lon_mid := quantile(lon, probs = 0.5, na.rm =T, by = STATE)]
+
+#look at the distance 
+met_stations[, distance := sqrt((lat-lat_mid)^2 + (lon-lon_mid)^2)]
+met_stations[,minrecord := which.min(distance),by = STATE]
+met_stations[, n := 1:.N, by = STATE]
+met_stations[n ==minrecord, .(USAFID,STATE,lon,lat)]
+```
+
+    ##     USAFID STATE      lon    lat
+    ##  1: 720283    MN  -92.180 43.677
+    ##  2: 720355    MD  -78.767 39.600
+    ##  3: 720369    ID -111.097 43.743
+    ##  4: 720388    WA -122.283 47.100
+    ##  5: 720436    KS  -94.731 37.449
+    ##  6: 720586    WI  -90.450 42.683
+    ##  7: 720768    VA  -83.218 36.654
+    ##  8: 722004    ND  -96.607 46.244
+    ##  9: 722092    OK  -94.739 36.607
+    ## 10: 722151    RI  -71.803 41.350
+    ## 11: 722177    NC  -83.865 35.195
+    ## 12: 722226    FL  -87.022 30.724
+    ## 13: 722253    LA  -91.881 32.756
+    ## 14: 722274    IA  -92.901 40.684
+    ## 15: 722364    MS  -90.347 34.681
+    ## 16: 722587    TX  -95.451 33.637
+    ## 17: 722764    AZ -109.061 35.658
+    ## 18: 723118    SC  -82.887 34.672
+    ## 19: 723200    GA  -85.167 34.350
+    ## 20: 723235    AL  -87.610 34.745
+    ## 21: 723347    TN  -89.409 36.000
+    ## 22: 723439    AR  -92.471 36.369
+    ## 23: 723600    NM -103.150 36.450
+    ## 24: 723805    CA -114.618 34.768
+    ## 25: 724075    NJ  -75.078 39.366
+    ## 26: 724180    DE  -75.607 39.679
+    ## 27: 724250    WV  -82.558 38.367
+    ## 28: 724320    IN  -87.533 38.050
+    ## 29: 724350    KY  -88.774 37.061
+    ## 30: 724430    IL  -91.192 39.937
+    ## 31: 724459    MO  -92.553 38.096
+    ## 32: 724689    CO -102.284 39.245
+    ## 33: 724860    NV -114.842 39.300
+    ## 34: 725075    MA  -73.170 42.696
+    ## 35: 725086    CT  -73.483 41.371
+    ## 36: 725117    PA  -80.290 40.136
+    ## 37: 725217    OH  -84.525 39.364
+    ## 38: 725235    NY  -79.258 42.153
+    ## 39: 725533    NE  -95.592 40.079
+    ## 40: 725705    UT -109.510 40.441
+    ## 41: 725763    WY -104.153 42.065
+    ## 42: 725976    OR -120.399 42.161
+    ## 43: 726165    NH  -72.271 42.898
+    ## 44: 726166    VT  -73.249 42.894
+    ## 45: 726183    ME  -70.948 43.991
+    ## 46: 726355    MI  -86.428 42.126
+    ## 47: 726525    SD  -97.364 42.879
+    ## 48: 726777    MT -104.250 46.358
+    ##     USAFID STATE      lon    lat
+
 Knit the doc and save it on GitHub.
 
 ## Question 4: Means of means

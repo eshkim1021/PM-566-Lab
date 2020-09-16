@@ -1,6 +1,6 @@
 ---
 title: "Lab 05 - Data Wrangling"
-output: html_document
+output: github_document
 ---
 
 # Learning goals
@@ -84,9 +84,16 @@ Once you are done setting up the project, you can now start working with the MET
 
 1. Load the `data.table` (and the `dtplyr` and `dplyr` packages if you plan to work with those).
 
+```{r}
+library(data.table)
+library(dplyr)
+
+
+```
+
 2. Load the met data from https://raw.githubusercontent.com/USCbiostats/data-science-data/master/02_met/met_all.gz, and also the station data. For the later, you can use the code we used during lecture to pre-process the stations data:
 
-```{r stations-data, eval = FALSE}
+```{r stations-data}
 # Download the data
 stations <- fread("ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-history.csv")
 stations[, USAF := as.integer(USAF)]
@@ -105,18 +112,43 @@ stations <- stations[!is.na(USAF)]
 # Removing duplicates
 stations[, n := 1:.N, by = .(USAF)]
 stations <- stations[n == 1,][, n := NULL]
+
+download.file("https://raw.githubusercontent.com/USCbiostats/data-science-data/master/02_met/met_all.gz", "met_all.gz", method="libcurl", timeout = 60)
+met <- data.table::fread("met_all.gz")
+
+
 ```
 
 3. Merge the data as we did during the lecture.
+
+```{r}
+met<- merge(x = met, y=stations, by.x = "USAFID", by.y ="USAF",all.x = T, all.y = FALSE)
+
+```
 
 ## Question 1: Representative station for the US
 
 What is the median station in terms of temperature, wind speed, and atmospheric pressure? Look for the three weather stations that best represent continental US using the `quantile()` function. Do these three coincide?
 
 ```{r}
+#obtaining averages per station
+met_stations <- met[, .(wind.sp = mean(wind.sp, na.rm = T),
+                        atm.press= mean (atm.press, na.rm=T),
+                        temp = mean(temp, na.rm = T)
+                        ), by = .(USAFID,STATE)]
 
+#computing the median 
+met_stations[,temp50 :=quantile(temp, probs = .5, na.rm = T)]
+met_stations[, atmp50 := quantile(atm.press, probs = .5, na.rm = T)]
+met_stations[,windsp50 := quantile(wind.sp, probs = .5, na.rm= T)]
+
+#Filtering the Data
+met_stations[which.min(abs(temp-temp50))]
+met_stations[which.min(abs(atm.press -atmp50))]
+met_stations[which.min(abs(wind.sp-windsp50))]
 ```
 
+No, the three do not coincide. 
 
 Knit the document, commit your changes, and Save it on GitHub. Don't forget to add `README.md` to the tree, the first time you render it.
 
@@ -125,7 +157,24 @@ Knit the document, commit your changes, and Save it on GitHub. Don't forget to a
 Just like the previous question, you are asked to identify what is the most representative, the median, station per state. This time, instead of looking at one variable at a time, look at the euclidean distance. If multiple stations show in the median, select the one located at the lowest latitude.
 
 ```{r}
+met_stations[,temp50 :=quantile(temp, probs = .5, na.rm = T),by = STATE]
+met_stations[, atmp50 := quantile(atm.press, probs = .5, na.rm = T), by = STATE]
+met_stations[,windsp50 := quantile(wind.sp, probs = .5, na.rm= T), by = STATE]
 
+#Temp Diff
+met_stations[,tempdif := which.min(abs(temp-temp50)),by = STATE]
+met_stations[, recordid := 1:.N, by=STATE]
+met_stations[recordid == tempdif,.(USAFID,temp,temp50,STATE)]
+
+#ATM Pressure
+met_stations[,atmdif := which.min(abs(atm.press-atmp50)),by = STATE]
+met_stations[, recordid := 1:.N, by=STATE]
+met_stations[recordid == atmdif,.(USAFID,temp,temp50,STATE)]
+
+#Wind Speed
+met_stations[,winddif := which.min(abs(wind.sp-windsp50)),by = STATE]
+met_stations[, recordid := 1:.N, by=STATE]
+met_stations[recordid == winddif,.(USAFID,temp,temp50,STATE)]
 ```
 
 Knit the doc and save it on GitHub.
@@ -135,6 +184,20 @@ Knit the doc and save it on GitHub.
 For each state, identify what is the station that is closest to the mid-point of the state. Combining these with the stations you identified in the previous question, use `leaflet()` to visualize all ~100 points in the same figure, applying different colors for those identified in this question.
 
 ```{r}
+library(leaflet)
+met_stations <- unique(met[,.(USAFID,STATE,lon,lat)])
+met_stations[,n := 1, by = USAFID]
+met_stations <- met_stations[n==1]
+
+met_stations[,lat_mid := quantile(lat, probs = 0.5, na.rm =T, by = STATE)]
+met_stations[,lon_mid := quantile(lon, probs = 0.5, na.rm =T, by = STATE)]
+
+#look at the distance 
+met_stations[, distance := sqrt((lat-lat_mid)^2 + (lon-lon_mid)^2)]
+met_stations[,minrecord := which.min(distance),by = STATE]
+met_stations[, n := 1:.N, by = STATE]
+met_stations[n ==minrecord, .(USAFID,STATE,lon,lat)]
+
 
 ```
 
