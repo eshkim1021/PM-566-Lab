@@ -278,6 +278,8 @@ met_stations[recordid == tempdif,.(USAFID,temp,temp50,STATE)]
     ##     USAFID     temp   temp50 STATE
 
 ``` r
+met_temp <- met_stations[recordid == tempdif, .(USAFID,temp,temp50,STATE)]
+
 #ATM Pressure
 met_stations[,atmdif := which.min(abs(atm.press-atmp50)),by = STATE]
 met_stations[, recordid := 1:.N, by=STATE]
@@ -403,6 +405,7 @@ this question.
 
 ``` r
 library(leaflet)
+
 met_stations <- unique(met[,.(USAFID,STATE,lon,lat)])
 met_stations[,n := 1, by = USAFID]
 met_stations <- met_stations[n==1]
@@ -414,7 +417,9 @@ met_stations[,lon_mid := quantile(lon, probs = 0.5, na.rm =T, by = STATE)]
 met_stations[, distance := sqrt((lat-lat_mid)^2 + (lon-lon_mid)^2)]
 met_stations[,minrecord := which.min(distance),by = STATE]
 met_stations[, n := 1:.N, by = STATE]
-met_stations[n ==minrecord, .(USAFID,STATE,lon,lat)]
+
+met_location <- met_stations[n ==minrecord, .(USAFID,STATE,lon,lat)]
+met_location
 ```
 
     ##     USAFID STATE      lon    lat
@@ -467,6 +472,46 @@ met_stations[n ==minrecord, .(USAFID,STATE,lon,lat)]
     ## 47: 726525    SD  -97.364 42.879
     ## 48: 726777    MT -104.250 46.358
     ##     USAFID STATE      lon    lat
+
+``` r
+all_stations <- met[,.(USAFID,lat,lon,STATE)][,.SD[1],by ="USAFID"]
+
+met_temp <-merge(
+  x = met_temp,
+  y = all_stations,
+  by = "USAFID",
+  all.x = TRUE, all.y = FALSE
+)
+```
+
+``` r
+library(leaflet)
+
+dat1 <- met_location[,.(lon,lat)]
+dat1[,type := "Center of the State"]
+
+dat2 <- met_temp[,.(lon,lat)]
+dat2[,type := "Center of the Temperature"]
+
+dat <-rbind(dat1,dat2)
+
+rh_pal <- colorFactor(c('blue','red'),
+                     domain = as.factor(dat$type))
+
+leaflet(dat)%>% 
+  addProviderTiles("OpenStreetMap") %>% 
+  addCircles(lng= ~lon,lat = ~lat,color=~rh_pal(type),opacity =1, fillOpacity=1)
+```
+
+<!--html_preserve-->
+
+<div id="htmlwidget-8dd4b7b360b4d7a27758" class="leaflet html-widget" style="width:672px;height:480px;">
+
+</div>
+
+<script type="application/json" data-for="htmlwidget-8dd4b7b360b4d7a27758">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["OpenStreetMap",null,null,{"errorTileUrl":"","noWrap":false,"detectRetina":false}]},{"method":"addCircles","args":[[43.677,39.6,43.743,47.1,37.449,42.683,36.654,46.244,36.607,41.35,35.195,30.724,32.756,40.684,34.681,33.637,35.658,34.672,34.35,34.745,36,36.369,36.45,34.768,39.366,39.679,38.367,38.05,37.061,39.937,38.096,39.245,39.3,42.696,41.371,40.136,39.364,42.153,40.079,40.441,42.065,42.161,42.898,42.894,43.991,42.126,42.879,46.358,45.417,46.683,42.574,39,41.384,30.46,34.717,38.35,48.784,30.033,29.445,35.438,44.523,35.211,33.355,38.533,37.033,31.183,28.85,38.586,32.167,32.867,35.867,36.009,36.744,40.033,39.674,40.82,40.412,39.135,39.909,38.051,42.571,41.91,41.733,41.333,41.914,40.717,42.4,40.219,44.533,43.344,43.626,43.156,43.683,45.604,44.339,46.358],[-92.18,-78.767,-111.097,-122.283,-94.731,-90.45,-83.218,-96.607,-94.739,-71.803,-83.865,-87.022,-91.881,-92.901,-90.347,-95.451,-109.061,-82.887,-85.167,-87.61,-89.409,-92.471,-103.15,-114.618,-75.078,-75.607,-82.558,-87.533,-88.774,-91.192,-92.553,-102.284,-114.842,-73.17,-73.483,-80.29,-84.525,-79.258,-95.592,-109.51,-104.153,-120.399,-72.271,-73.249,-70.948,-86.428,-97.364,-104.25,-123.817,-122.983,-84.811,-80.274,-72.506,-87.877,-79.95,-93.683,-97.632,-85.533,-90.261,-94.803,-114.215,-91.738,-84.567,-76.033,-85.95,-90.471,-96.917,-77.711,-110.883,-117.133,-78.783,-86.52,-108.229,-74.35,-75.606,-82.518,-86.937,-96.679,-105.117,-117.09,-77.713,-70.729,-71.433,-75.717,-88.246,-99,-96.383,-111.723,-69.667,-72.518,-72.305,-90.678,-93.367,-103.546,-105.541,-104.25],10,null,null,{"interactive":true,"className":"","stroke":true,"color":["#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000"],"weight":5,"opacity":1,"fill":true,"fillColor":["#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#0000FF","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000","#FF0000"],"fillOpacity":1},null,null,null,{"interactive":false,"permanent":false,"direction":"auto","opacity":1,"offset":[0,0],"textsize":"10px","textOnly":false,"className":"","sticky":true},null,null]}],"limits":{"lat":[28.85,48.784],"lng":[-123.817,-69.667]}},"evals":[],"jsHooks":[]}</script>
+
+<!--/html_preserve-->
 
 Knit the doc and save it on GitHub.
 
